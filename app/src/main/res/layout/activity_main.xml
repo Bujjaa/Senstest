@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.android.senstest.MainActivity">
+
+    <TextView
+        android:id="@+id/activityView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Activtiy"
+        tools:layout_editor_absoluteX="41dp"
+        tools:layout_editor_absoluteY="49dp"
+        android:layout_marginStart="34dp"
+        android:layout_alignBaseline="@+id/dataActivity"
+        android:layout_alignBottom="@+id/dataActivity"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:id="@+id/locationView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Standort"
+        tools:layout_editor_absoluteX="41dp"
+        tools:layout_editor_absoluteY="102dp"
+        android:layout_marginBottom="84dp"
+        android:layout_above="@+id/networkView"
+        android:layout_alignStart="@+id/activityView" />
+
+    <TextView
+        android:id="@+id/networkView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Netzwerk Status"
+        tools:layout_editor_absoluteX="41dp"
+        tools:layout_editor_absoluteY="171dp"
+        android:layout_marginBottom="88dp"
+        android:layout_above="@+id/sensBtn"
+        android:layout_alignStart="@+id/locationView" />
+
+    <TextView
+        android:id="@+id/dataActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="test"
+        tools:layout_editor_absoluteX="205dp"
+        tools:layout_editor_absoluteY="49dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="63dp" />
+
+    <TextView
+        android:id="@+id/dataLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="test"
+        tools:layout_editor_absoluteX="205dp"
+        tools:layout_editor_absoluteY="102dp"
+        android:layout_alignBaseline="@+id/locationView"
+        android:layout_alignBottom="@+id/locationView"
+        android:layout_alignStart="@+id/dataNetwork" />
+
+    <TextView
+        android:id="@+id/dataNetwork"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="test"
+        tools:layout_editor_absoluteX="205dp"
+        tools:layout_editor_absoluteY="171dp"
+        android:layout_alignBaseline="@+id/networkView"
+        android:layout_alignBottom="@+id/networkView"
+        android:layout_alignEnd="@+id/sensBtn"
+        android:layout_marginEnd="14dp" />
+
+    <Button
+        android:id="@+id/sensBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        tools:layout_editor_absoluteX="140dp"
+        tools:layout_editor_absoluteY="375dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="69dp" />
+
+    <Button
+        android:id="@+id/permBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Button"
+        android:onClick=""
+        android:layout_marginEnd="17dp"
+        android:layout_alignBaseline="@+id/sensBtn"
+        android:layout_alignBottom="@+id/sensBtn"
+        android:layout_alignParentEnd="true" />
+
+
+</RelativeLayout>

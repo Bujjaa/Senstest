@@ -90,7 +90,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Button"
-        android:onClick=""
+        android:onClick="startSensing"
         android:layout_marginEnd="17dp"
         android:layout_alignBaseline="@+id/sensBtn"
         android:layout_alignBottom="@+id/sensBtn"

@@ -31,19 +31,25 @@ public class SensingManager {
     private ContextTypeListener mActivityListener;
     private ContextTypeListener mNetworkListener;
     private ContextTypeListener mCallListener;
+    MainActivity mActivity;
     //
 
     //
-    private boolean isLocationOn;
-    private boolean isActivityOn;
+
+
+
+
+    private boolean isActivityOn = true;
     private boolean isScreenOn;
-    private boolean isNetworkOn;
+    private boolean isNetworkOn = true;
     private boolean isRunAppOn;
     private boolean isCallOn;
     //
     private String TAG = SensingManager.class.getName();
 
+
     public SensingManager() {
+        mActivity = new MainActivity();
     }
     public void startSensing(){
         mSensing = new Sensing(Application.getContext(), new SensingListener());
@@ -73,6 +79,8 @@ public class SensingManager {
                 loadSensingSettings();
             }
             public void onError(ContextError error) {
+                loadSensingSettings();
+
                 Log.d("APPLICATION", "Error: " + error.getMessage());
             }
         });
@@ -87,16 +95,16 @@ public class SensingManager {
             if(!isLocationOn)
             {
                 mSensing.enableSensing(ContextType.LOCATION, null);
-                isLocationOn=true;
+                //isLocationOn=true;
                 Log.d(TAG,"GPS-Tracking enabled");
             }else if(isLocationOn){
                 mSensing.disableSensing(ContextType.LOCATION);
-                isLocationOn =false;
+                //isLocationOn =false;
                 Log.d(TAG, "GPS-Tracking disabled");
             }
             //enable Activity Sensing
-            isActivityOn = false;
-            if(!isActivityOn){
+
+            if(!mActivity.isActivitySensingon()){
                 ActivityOptionBuilder actBui;
                 actBui = new ActivityOptionBuilder();
                 actBui
@@ -105,11 +113,11 @@ public class SensingManager {
                         .setSensorHubContinuousFlag(ContinuousFlag.NOPAUSE_ON_SLEEP);
                 settings = actBui.toBundle();
                 mSensing.enableSensing(ContextType.ACTIVITY_RECOGNITION, settings);
-                isActivityOn = true;
+                //isActivityOn = true;
                 Log.d(TAG, "Activity-Tracking enabled");
-            }else if(isActivityOn){
+            }else if(mActivity.isActivitySensingon()){
                 mSensing.disableSensing(ContextType.ACTIVITY_RECOGNITION);
-                isActivityOn=false;
+               // isActivityOn=false;
                 Log.d(TAG, "Activity-Tracking disabled");
             }
 
@@ -119,11 +127,11 @@ public class SensingManager {
                settings.putLong("TIME_WINDOW", 10*1000);
                 mSensing.enableSensing(ContextType.NETWORK, settings);
 
-                isNetworkOn = true;
+                //isNetworkOn = true;
                 Log.d(TAG, "Network-Tracking enabled");
             }else if (isNetworkOn){
                 mSensing.disableSensing(ContextType.NETWORK);
-                isNetworkOn = false;
+                //isNetworkOn = false;
                 Log.d(TAG, "Network-Tracking disabled");
             }
 
@@ -131,6 +139,15 @@ public class SensingManager {
         } catch (ContextProviderException e) {
             Log.e("APPLICATION", "Error enabling context type" + e.getMessage());
         }
+    }
+    private boolean isLocationOn = true;
+
+    public void setActivityOn(boolean activityOn) {
+        isActivityOn = activityOn;
+    }
+
+    public boolean isActivityOn() {
+        return isActivityOn;
     }
 
 }

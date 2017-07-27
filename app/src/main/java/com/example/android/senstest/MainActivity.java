@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -25,6 +26,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.ACCESS_NETWORK_STATE;
+import static android.Manifest.permission.READ_PHONE_STATE;
 import static android.os.Build.VERSION_CODES.M;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,6 +37,14 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPreferences, dataPref, locPref;
     Handler mHandler;
     String sLocation, sActivity;
+    SensingManager sensMang;
+
+    public boolean isActivitySensingon() {
+        return activitySensingon;
+    }
+
+
+    boolean activitySensingon =true;
 
 
     @Override
@@ -42,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         this.checkPermissions();
         this.mHandler = new Handler();
         EventBus.getDefault().register(this);
+        sensMang = new SensingManager();
 
 
 
@@ -91,110 +104,39 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void startSensing(View v) {
+        if(sensMang.isActivityOn())
+            Log.d("BoolActivity","before change is true");
+        else
+            Log.d("BoolActivity","before change is false");
+
+        sensMang.setActivityOn(false);
+        activitySensingon = false;
+
+        if(sensMang.isActivityOn())
+            Log.d("BoolActivity","after change is true");
+        else
+            Log.d("BoolActivity","after change is false");
+        Application.getSensingManager().startSensing();
 
         //vLocation.setText(Application.getContext().);
     }
     public void checkPermissions(){
-        // Here, thisActivity is the current activity
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
+            String[] permissions = new String[]{Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_FINE_LOCATION};
+            boolean flag = false;
+            for (int i = 0; i < permissions.length; i++) {
+                if (checkSelfPermission(permissions[i]) == PackageManager.PERMISSION_DENIED) {
+                    flag = true;
+                    break;
+                }
             }
-        }
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.d("Permission","Access_Fine_Location granted");
-        }
 
-
-
-
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_PHONE_STATE)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_PHONE_STATE},
-                        1);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
+            if (flag) {
+                requestPermissions(permissions, 1);
             }
+
         }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_PHONE_STATE)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.d("Permission","READ_PHONE_STATE granted");
-        }
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_NETWORK_STATE )
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_NETWORK_STATE )) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_NETWORK_STATE },
-                        1);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-        }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_NETWORK_STATE )
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.d("Permission","ACCESS_NETWORK_STATE  granted");
-        }
-
-
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

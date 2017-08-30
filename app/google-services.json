@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "627888739143",
+    "firebase_url": "https://senstest-eaae0.firebaseio.com",
+    "project_id": "senstest-eaae0",
+    "storage_bucket": "senstest-eaae0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627888739143:android:ba909e554e38897c",
+        "android_client_info": {
+          "package_name": "com.example.android.senstest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "627888739143-kaie6s4u61uaachtmbm0hhq8jko6r158.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.android.senstest",
+            "certificate_hash": "09eb51a5af66760a458ac52167481bc0997cbd16"
+          }
+        },
+        {
+          "client_id": "627888739143-b05s53gi4ncp4nkesh8mmfjpjje25ru1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGkjIgjvU4pU1UrI8XZZLSHYJNPhRlpLs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "627888739143-b05s53gi4ncp4nkesh8mmfjpjje25ru1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,26 +5,39 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.senstest.EventBus.ActivityEvent;
-import com.example.android.senstest.EventBus.MessageEvent;
-import com.example.android.senstest.IntelSensingSDK.LocationListener;
+import de.dennis.mobilesensing_module.mobilesensing.Module;
+import de.dennis.mobilesensing_module.mobilesensing.Sensors.GoogleLocation.GLocationListener;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
@@ -37,24 +50,33 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPreferences, dataPref, locPref;
     Handler mHandler;
     String sLocation, sActivity;
-    SensingManager sensMang;
+    SharedPreferences prefs = Application.getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = prefs.edit();
+    GLocationListener gLocationListener;
+
+
+
 
     public boolean isActivitySensingon() {
         return activitySensingon;
     }
 
 
-    boolean activitySensingon =true;
+    boolean activitySensingon =false;
 
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         this.checkPermissions();
         this.mHandler = new Handler();
-        EventBus.getDefault().register(this);
-        sensMang = new SensingManager();
+        gLocationListener = new GLocationListener(this,10*1000,5*1000);
+
+
+
 
 
 
@@ -74,25 +96,38 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-               if(sharedPreferences.getString("Network","asd") != null)
-               {
+
+                gLocationListener.getCoordinates();
+                vLocation.setText(gLocationListener.getCoordinates());
+                Log.d("Main:gLocationListener",gLocationListener.getCoordinates());
+
+                //write Location coordinates into Firebase
+                firePost(gLocationListener.getCoordinates());
+
+                if (checkPlayServices()) {
+                    // Start IntentService to register this application with GCM.
+                    Log.d("Google Play Service", "ist aktiv");
+
+                   if(sharedPreferences.getString("Network","asd") != null)
+                   {
                    vNetwork.setText(sharedPreferences.getString("Network","asd"));
                    Log.d("NetworkString", sharedPreferences.getString("Network","asd"));
-                   vLocation.setText(sLocation);
-
-                 //  vLocation.setText(locPref.getString("Location","asd"));
                    Log.d("LocationString", locPref.getString("Location","asd"));
-                   m_Runnable.run();
-               }
-
-               else{
-                   vNetwork.setText("Nicht verbunden");
-                   Log.d("NetworkString",sharedPreferences.getString("Network","nicht gefunden"));
-               }
-
+                       if(activitySensingon){
+                           m_Runnable.run();
+                       }
+                   }
+                   else{
+                       vNetwork.setText("Nicht verbunden");
+                       Log.d("NetworkString",sharedPreferences.getString("Network","nicht gefunden"));
+                   }
+                }
             }
      });
+
+
     }
+
     private final Runnable m_Runnable = new Runnable() {
         public void run(){
 
@@ -101,29 +136,28 @@ public class MainActivity extends AppCompatActivity {
             MainActivity.this.mHandler.postDelayed(m_Runnable,2000);
         }
     };
+    public void firePost(String text){
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("test");
+        myRef.setValue(text);
+    }
 
 
-    public void startSensing(View v) {
-        if(sensMang.isActivityOn())
-            Log.d("BoolActivity","before change is true");
-        else
-            Log.d("BoolActivity","before change is false");
-
-        sensMang.setActivityOn(false);
-        activitySensingon = false;
-
-        if(sensMang.isActivityOn())
-            Log.d("BoolActivity","after change is true");
-        else
-            Log.d("BoolActivity","after change is false");
-        Application.getSensingManager().startSensing();
+    public void stopSensing(View v) {
+        Module.getSensingManager().stopSensing();
+        if(FirebaseAuth.getInstance().getCurrentUser() != null) {
+            //mLoginActivity.signOut();
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
 
         //vLocation.setText(Application.getContext().);
     }
     public void checkPermissions(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-            String[] permissions = new String[]{Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_FINE_LOCATION};
+            String[] permissions = new String[]{Manifest.permission.INTERNET,Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.READ_PHONE_STATE, Manifest.permission.ACCESS_FINE_LOCATION};
             boolean flag = false;
             for (int i = 0; i < permissions.length; i++) {
                 if (checkSelfPermission(permissions[i]) == PackageManager.PERMISSION_DENIED) {
@@ -138,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-
+/*
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onActivityEvent(ActivityEvent event){
         sActivity = event.message;
@@ -149,16 +183,34 @@ public class MainActivity extends AppCompatActivity {
         sLocation = event.message;
         Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
     }
+    */
 
 
     @Override
     public void onDestroy(){
         super.onDestroy();
-        EventBus.getDefault().unregister(this);
     }
     @Override
     public void onStop(){
         super.onStop();
-        EventBus.getDefault().unregister(this);
     }
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST)
+                        .show();
+            } else {
+                Log.i("Play service", "This device is not supported.");
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
+
+
 }
+
+

@@ -64,7 +64,7 @@ public class SensingManager {
 
 
     public SensingManager() {
-//         prefs = Module.getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
+         prefs = Module.getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
         //Init Intel SDK
         mSensing = new Sensing(Module.getContext(), new SensingListener());
 
@@ -75,9 +75,10 @@ public class SensingManager {
                 //
                 try {
                     //Location Listener
-                    mLocationListener = new LocationListener();
+                   // mLocationListener = new LocationListener();
+                   // mSensing.addContextTypeListener(ContextType.LOCATION, mLocationListener);
+
                     mGLocationListener = new GLocationListener(Module.getContext(),10*1000,5*1000); //context,interval, fastest interval
-                    mSensing.addContextTypeListener(ContextType.LOCATION, mLocationListener);
                     //Activity Listener
                     mActivityListener = new ActivityListener();
                     mSensing.addContextTypeListener(ContextType.ACTIVITY_RECOGNITION, mActivityListener);
@@ -134,7 +135,7 @@ public class SensingManager {
                     ActivityCompat.checkSelfPermission(Module.getContext(),Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                     )
             {
-                mGLocationListener.getCoordinates();
+               // mGLocationListener.getCoordinates();
                 mGLocationListener.startLocationUpdates();
                // mSensing.enableSensing(ContextType.LOCATION, null);
                 Log.d(TAG,"GPS-Tracking enabled");
@@ -222,5 +223,6 @@ public class SensingManager {
     }
     public void stopSensing(){
         mSensing.stop();
+        mGLocationListener.stopLocationUpdates();
     }
 }

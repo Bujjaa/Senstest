@@ -23,8 +23,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import de.dennis.mobilesensing_module.mobilesensing.EventBus.SensorDataEvent;
 import de.dennis.mobilesensing_module.mobilesensing.Module;
+import de.dennis.mobilesensing_module.mobilesensing.SensingManager.SensorNames;
 import de.dennis.mobilesensing_module.mobilesensing.Sensors.GoogleLocation.GLocationListener;
+import de.dennis.mobilesensing_module.mobilesensing.Storage.ObjectBox.SensorTimeseries;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -38,6 +42,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
@@ -53,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences prefs = Application.getContext().getSharedPreferences("Settings", Context.MODE_PRIVATE);
     SharedPreferences.Editor editor = prefs.edit();
     GLocationListener gLocationListener;
+    SensorTimeseries msensorTimeseries;
+    double i= 0;
 
 
 
@@ -73,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
 
         this.checkPermissions();
         this.mHandler = new Handler();
-        gLocationListener = new GLocationListener(this,10*1000,5*1000);
+        gLocationListener = new GLocationListener(Module.getContext(),10*1000,5*1000);
+        msensorTimeseries = new SensorTimeseries();
 
 
 
@@ -95,23 +108,26 @@ public class MainActivity extends AppCompatActivity {
         sensBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Module.getSensingManager().setSensingSetting(SensorNames.GPS,true);
+
+                Module.getSensingManager().startSensing();
 
 
-                gLocationListener.getCoordinates();
-                vLocation.setText(gLocationListener.getCoordinates());
-                Log.d("Main:gLocationListener",gLocationListener.getCoordinates());
+                //gLocationListener.getCoordinates();
+                //vLocation.setText(gLocationListener.getCoordinates());
+               // Log.d("Main:gLocationListener",gLocationListener.getCoordinates());
 
                 //write Location coordinates into Firebase
-                firePost(gLocationListener.getCoordinates());
+               // firePost(gLocationListener.getCoordinates());
 
                 if (checkPlayServices()) {
                     // Start IntentService to register this application with GCM.
                     Log.d("Google Play Service", "ist aktiv");
 
-                   if(sharedPreferences.getString("Network","asd") != null)
+                   if(dataPref.getString("Network","asd") != null)
                    {
-                   vNetwork.setText(sharedPreferences.getString("Network","asd"));
-                   Log.d("NetworkString", sharedPreferences.getString("Network","asd"));
+                   vNetwork.setText(dataPref.getString("Network","asd"));
+                   Log.d("NetworkString", dataPref.getString("Network","asd"));
                    Log.d("LocationString", locPref.getString("Location","asd"));
                        if(activitySensingon){
                            m_Runnable.run();
@@ -119,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
                    }
                    else{
                        vNetwork.setText("Nicht verbunden");
-                       Log.d("NetworkString",sharedPreferences.getString("Network","nicht gefunden"));
+                       Log.d("NetworkString",dataPref.getString("Network","nicht gefunden"));
                    }
                 }
             }
@@ -136,10 +152,22 @@ public class MainActivity extends AppCompatActivity {
             MainActivity.this.mHandler.postDelayed(m_Runnable,2000);
         }
     };
-    public void firePost(String text){
+    public void firePostString(String text){
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("test");
-        myRef.setValue(text);
+        myRef.child("child 1").child("child 2").setValue(text);
+    }
+    public void firePostDouble(Double d1, Double d2){
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("Coordinates");
+        myRef.child("lat").setValue(d1);
+        myRef.child("lng").setValue(d2);
+    }
+    public void firePostJson(JSONObject jsonObject){
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("test");
+
+        myRef.setValue(jsonObject);
     }
 
 
@@ -208,6 +236,23 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(SensorDataEvent event) throws JSONException {
+
+        //firePostJson(event.data.toJSON());
+        Double d1 = gLocationListener.getLatitude()+i;
+        Double d2 = gLocationListener.getLongitude();
+        firePostDouble(d1,d2);
+        String s = d1+","+d2;
+        vLocation.setText(s);
+        Log.d("Main: OBox event",s);
+    };
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
     }
 
 

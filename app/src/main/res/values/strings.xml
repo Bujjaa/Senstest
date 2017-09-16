@@ -14,4 +14,7 @@
     <string name="drawer_close">Close navigation drawer</string>
     <string name="action_websearch">Web search</string>
     <string name="app_not_available">Sorry, there\'s no web browser available</string>
+    <string name="parse_server_url">http://transport.wineme.fb5.uni-siegen.de/parse</string>
+    <string name="parse_client_key">CKeyasdasd123!</string>
+    <string name="parse_app_id">1234567890</string>
 </resources>

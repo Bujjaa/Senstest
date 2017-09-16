@@ -7,6 +7,7 @@ import de.dennis.mobilesensing_module.mobilesensing.Module;
 import de.dennis.mobilesensing_module.mobilesensing.SensingManager.SensingManager;
 import de.dennis.mobilesensing_module.mobilesensing.SensingManager.SensorNames;
 import de.dennis.mobilesensing_module.mobilesensing.Upload.UploadManager;
+import com.parse.Parse;
 
 /**
  * Created by Anton on 23.06.2017.
@@ -23,6 +24,15 @@ public class Application extends android.app.Application {
         Module.init(context, "USERNAME");
        sensMang = Module.getSensingManager();
 
+        Parse.initialize(this);
+        /*
+        Parse.initialize(new Parse.Configuration.Builder(this)
+                        .applicationId("1234567890")
+                        .server("http://transport.wineme.fb5.uni-siegen.de/parse/")
+                        .build()
+        );
+
+*/
 
         sensMang.setSensingSetting(SensorNames.Activity,false);
         sensMang.setSensingSetting(SensorNames.GPS,false);

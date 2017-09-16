@@ -41,6 +41,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.parse.Parse;
+import com.parse.ParseGeoPoint;
+import com.parse.ParseObject;
 
 
 import org.greenrobot.eventbus.EventBus;
@@ -65,8 +68,9 @@ public class MainActivity extends AppCompatActivity {
     GLocationListener gLocationListener;
     SensorTimeseries msensorTimeseries;
     double i= 0;
+    ParseObject parseCoordinates;
 
-
+    ParseObject testParse;
 
 
     public boolean isActivitySensingon() {
@@ -78,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +92,9 @@ public class MainActivity extends AppCompatActivity {
         this.mHandler = new Handler();
         gLocationListener = new GLocationListener(Module.getContext(),10*1000,5*1000);
         msensorTimeseries = new SensorTimeseries();
+        parseCoordinates = new ParseObject("BusCoordinates");
 
+        testParse = new ParseObject("testParse1");
 
 
 
@@ -244,6 +251,13 @@ public class MainActivity extends AppCompatActivity {
         //firePostJson(event.data.toJSON());
         Double d1 = gLocationListener.getLatitude()+i;
         Double d2 = gLocationListener.getLongitude();
+        i += 0.005;
+
+        ParseGeoPoint point = new ParseGeoPoint(d1,d2);
+        testParse.put("location",point);
+        testParse.put("Latitude", 12345);
+        testParse.put("Longitude", 1234568);
+        testParse.saveInBackground();
         firePostDouble(d1,d2);
         String s = d1+","+d2;
         vLocation.setText(s);

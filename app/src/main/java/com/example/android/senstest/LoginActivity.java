@@ -36,6 +36,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private EditText mEmailField;
     private EditText mPasswordField;
     private boolean authentication = false;
+    private long backPressedTime =0;
 
 
 
@@ -263,6 +264,20 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 requestPermissions(permissions, 1);
             }
 
+        }
+    }
+    @Override
+    public void onBackPressed() {        // to prevent irritating accidental logouts
+        long t = System.currentTimeMillis();
+
+        if (t - backPressedTime > 2000) {    // 2 secs
+            backPressedTime = t;
+            Toast.makeText(this, "Press back again to close the app",
+                    Toast.LENGTH_SHORT).show();
+        } else {    // this guy is serious
+            // clean up#
+            finish();
+            System.exit(0);
         }
     }
 }

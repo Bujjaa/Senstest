@@ -12,14 +12,17 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,9 +44,12 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.parse.GetCallback;
 import com.parse.Parse;
+import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
 
 
 import org.greenrobot.eventbus.EventBus;
@@ -57,7 +63,7 @@ import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.READ_PHONE_STATE;
 import static android.os.Build.VERSION_CODES.M;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     Button sensBtn, permBtn;
     TextView vActivity, vLocation, vNetwork;
     SharedPreferences sharedPreferences, dataPref, locPref;
@@ -67,18 +73,12 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences.Editor editor = prefs.edit();
     GLocationListener gLocationListener;
     SensorTimeseries msensorTimeseries;
+    Spinner spinner ;
     double i= 0;
-    ParseObject parseCoordinates;
-
-    ParseObject testParse;
-
-
-    public boolean isActivitySensingon() {
-        return activitySensingon;
-    }
-
-
+    ParseQuery<ParseObject> query;
     boolean activitySensingon =false;
+    private long backPressedTime =0;
+    String buslinie;
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -90,21 +90,28 @@ public class MainActivity extends AppCompatActivity {
 
         this.checkPermissions();
         this.mHandler = new Handler();
-        gLocationListener = new GLocationListener(Module.getContext(),10*1000,5*1000);
+        gLocationListener = new GLocationListener(Module.getContext(),5*1000,5*1000);
         msensorTimeseries = new SensorTimeseries();
-        parseCoordinates = new ParseObject("BusCoordinates");
-
-        testParse = new ParseObject("testParse1");
+        query = ParseQuery.getQuery("testParse1");
 
 
 
 
 
 
-        vActivity = (TextView) findViewById(R.id.dataActivity);
+
         vLocation = (TextView) findViewById(R.id.dataLocation);
         vNetwork = (TextView) findViewById(R.id.dataNetwork);
         permBtn = (Button) findViewById(R.id.permBtn);
+        spinner = (Spinner) findViewById(R.id.buslineSpinner);
+        spinner.setOnItemSelectedListener(this);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.busline_array, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+
 
         dataPref = Application.getContext().getSharedPreferences("Data",Context.MODE_PRIVATE);
         sharedPreferences = Application.getContext().getSharedPreferences("Settings",Context.MODE_PRIVATE);
@@ -150,6 +157,20 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    public void onItemSelected(AdapterView<?> parent, View view,
+                               int pos, long id) {
+        // An item was selected. You can retrieve the selected item using
+        // parent.getItemAtPosition(pos)
+        buslinie = parent.getItemAtPosition(pos).toString();
+       Log.d("spinnertest",parent.getItemAtPosition(pos).toString());
+
+    }
+
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Another interface callback
+    }
+
 
     private final Runnable m_Runnable = new Runnable() {
         public void run(){
@@ -249,17 +270,39 @@ public class MainActivity extends AppCompatActivity {
     public void onMessageEvent(SensorDataEvent event) throws JSONException {
 
         //firePostJson(event.data.toJSON());
-        Double d1 = gLocationListener.getLatitude()+i;
+        Double d1 = gLocationListener.getLatitude();
         Double d2 = gLocationListener.getLongitude();
+        final Double d1e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLat();
+        final Double d2e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLng();
         i += 0.005;
+        final ParseGeoPoint point = new ParseGeoPoint(d1e,d2e);
 
-        ParseGeoPoint point = new ParseGeoPoint(d1,d2);
-        testParse.put("location",point);
-        testParse.put("Latitude", 12345);
-        testParse.put("Longitude", 1234568);
-        testParse.saveInBackground();
-        firePostDouble(d1,d2);
-        String s = d1+","+d2;
+        if(buslinie.equals("UX1")) {
+            // Updating Coordinates with Parse
+            // Retrieve the object by id
+            query.getInBackground("SP40cEuIyj", new GetCallback<ParseObject>() {
+                public void done(ParseObject busCoordinates, ParseException e) {
+                    if (e == null) {
+                        busCoordinates.put("Latitude", d1e);
+                        busCoordinates.put("Longitude", d2e);
+                        busCoordinates.put("location", point);
+                        busCoordinates.saveInBackground();
+                    }
+                }
+            });
+        } else if(buslinie.equals("UX2")) {
+            query.getInBackground("6G0aZpfcY7", new GetCallback<ParseObject>() {
+                public void done(ParseObject busCoordinates, ParseException e) {
+                    if (e == null) {
+                        busCoordinates.put("Latitude", d1e);
+                        busCoordinates.put("Longitude", d2e);
+                        busCoordinates.put("location", point);
+                        busCoordinates.saveInBackground();
+                    }
+                }
+            });
+        }
+        String s = d1e+","+d2e;
         vLocation.setText(s);
         Log.d("Main: OBox event",s);
     };
@@ -268,8 +311,23 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         EventBus.getDefault().register(this);
     }
+    @Override
+    public void onBackPressed() {        // to prevent irritating accidental logouts
+        long t = System.currentTimeMillis();
+
+            if (t - backPressedTime > 2000) {    // 2 secs
+                backPressedTime = t;
+                Toast.makeText(this, "Press back again to close the app",
+                        Toast.LENGTH_SHORT).show();
+            } else {    // this guy is serious
+                // clean up#
+                finish();
+               // System.exit(0);
+            }
+        }
+    }
 
 
-}
+
 
 

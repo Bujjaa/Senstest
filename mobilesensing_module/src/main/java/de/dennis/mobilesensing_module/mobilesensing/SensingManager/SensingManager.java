@@ -221,8 +221,9 @@ public class SensingManager {
         editor.putBoolean(name.toString(),run);
         editor.apply();
     }
-    public void stopSensing(){
-        mSensing.stop();
+    public void stopSensing() throws ContextProviderException {
+        mSensing.disableSensing();
+        //mSensing.stop();
         mGLocationListener.stopLocationUpdates();
     }
 }

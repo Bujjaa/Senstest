@@ -44,12 +44,16 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.intel.context.Sensing;
+import com.intel.context.exception.ContextProviderException;
+import com.parse.FindCallback;
 import com.parse.GetCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.SaveCallback;
 
 
 import org.greenrobot.eventbus.EventBus;
@@ -57,6 +61,8 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.List;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
@@ -78,7 +84,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     ParseQuery<ParseObject> query;
     boolean activitySensingon =false;
     private long backPressedTime =0;
-    String buslinie;
+    String buslinie, finalBuslinie;
+    String parseObjectID, oldParseObjectID;
+    boolean sensingAlreadyStarted = false;
+    Thread t;
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -122,17 +131,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         sensBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Module.getSensingManager().setSensingSetting(SensorNames.GPS,true);
+                if(sensingAlreadyStarted == true){
+                    Toast.makeText(MainActivity.this, "Programm bereits gestartet, bitte erst stoppen!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                Module.getSensingManager().startSensing();
-
-
-                //gLocationListener.getCoordinates();
-                //vLocation.setText(gLocationListener.getCoordinates());
-               // Log.d("Main:gLocationListener",gLocationListener.getCoordinates());
-
-                //write Location coordinates into Firebase
-               // firePost(gLocationListener.getCoordinates());
 
                 if (checkPlayServices()) {
                     // Start IntentService to register this application with GCM.
@@ -152,8 +155,52 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                        Log.d("NetworkString",dataPref.getString("Network","nicht gefunden"));
                    }
                 }
+
+
+                Log.d("tmpString","String: "+ buslinie);
+                finalBuslinie = buslinie;
+
+
+                query.whereEqualTo("BusLabel", finalBuslinie);
+                query.whereEqualTo("isactive", false);
+                query.findInBackground(new FindCallback<ParseObject>() {
+                    public void done(List<ParseObject> parselist, ParseException e) {
+                        if(e==null && parselist.size() != 0){
+                            Log.d("ParseList", "item 0: "+parselist.get(0));
+                            parseObjectID = parselist.get(0).getObjectId();
+                            Log.d("parsID",""+parseObjectID);
+                        }
+                        else if(e==null){
+                            final ParseObject newBusCoordinates = new ParseObject("testParse1");
+                            newBusCoordinates.put("BusLabel","UX1");
+                            newBusCoordinates.put("isactive",false);
+                            newBusCoordinates.saveInBackground(new SaveCallback() {
+                                @Override
+                                public void done(ParseException e) {
+                                    if(e==null) {
+                                        parseObjectID = newBusCoordinates.getObjectId();
+                                        Log.d("ParseID", "was saved: "+parseObjectID);
+                                        Log.d("parsID",""+parseObjectID);
+                                    }
+                                    else{
+                                        Log.d("ParseID", "error: "+e);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+
+
+                Module.getSensingManager().setSensingSetting(SensorNames.GPS,true);
+
+                Module.getSensingManager().startSensing();
+                sensingAlreadyStarted = true;
             }
+
      });
+
+
 
 
     }
@@ -180,33 +227,25 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             MainActivity.this.mHandler.postDelayed(m_Runnable,2000);
         }
     };
-    public void firePostString(String text){
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("test");
-        myRef.child("child 1").child("child 2").setValue(text);
-    }
-    public void firePostDouble(Double d1, Double d2){
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("Coordinates");
-        myRef.child("lat").setValue(d1);
-        myRef.child("lng").setValue(d2);
-    }
-    public void firePostJson(JSONObject jsonObject){
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("test");
-
-        myRef.setValue(jsonObject);
-    }
 
 
-    public void stopSensing(View v) {
-        Module.getSensingManager().stopSensing();
-        if(FirebaseAuth.getInstance().getCurrentUser() != null) {
-            //mLoginActivity.signOut();
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        }
+    public void stopSensing(View v) throws ContextProviderException {
+        if (sensingAlreadyStarted == true) {
+            Module.getSensingManager().stopSensing();
+
+            sensingAlreadyStarted = false;
+
+        Toast.makeText(this, "GPS übermittlung wurde gestoppt", Toast.LENGTH_SHORT).show();
+        query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
+            @Override
+            public void done(ParseObject object, ParseException e) {
+                object.put("isactive", false);
+                object.saveInBackground();
+                Log.d("Stopsensing", "stopped Object: " + parseObjectID);
+            }
+        });
+        oldParseObjectID = parseObjectID;
+    }
 
         //vLocation.setText(Application.getContext().);
     }
@@ -277,31 +316,23 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         i += 0.005;
         final ParseGeoPoint point = new ParseGeoPoint(d1e,d2e);
 
-        if(buslinie.equals("UX1")) {
-            // Updating Coordinates with Parse
-            // Retrieve the object by id
-            query.getInBackground("SP40cEuIyj", new GetCallback<ParseObject>() {
+
+        Log.d("ParseObjectID","kurz vor den put: "+parseObjectID);
+        if(parseObjectID != oldParseObjectID) {
+            query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
                 public void done(ParseObject busCoordinates, ParseException e) {
                     if (e == null) {
+                        busCoordinates.put("BusLabel", finalBuslinie);
                         busCoordinates.put("Latitude", d1e);
                         busCoordinates.put("Longitude", d2e);
                         busCoordinates.put("location", point);
-                        busCoordinates.saveInBackground();
-                    }
-                }
-            });
-        } else if(buslinie.equals("UX2")) {
-            query.getInBackground("6G0aZpfcY7", new GetCallback<ParseObject>() {
-                public void done(ParseObject busCoordinates, ParseException e) {
-                    if (e == null) {
-                        busCoordinates.put("Latitude", d1e);
-                        busCoordinates.put("Longitude", d2e);
-                        busCoordinates.put("location", point);
+                        busCoordinates.put("isactive", true);
                         busCoordinates.saveInBackground();
                     }
                 }
             });
         }
+
         String s = d1e+","+d2e;
         vLocation.setText(s);
         Log.d("Main: OBox event",s);
@@ -321,8 +352,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         Toast.LENGTH_SHORT).show();
             } else {    // this guy is serious
                 // clean up#
+                permBtn.callOnClick();
                 finish();
-               // System.exit(0);
             }
         }
     }

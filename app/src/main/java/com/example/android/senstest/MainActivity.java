@@ -18,11 +18,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,16 +62,24 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.math.RoundingMode;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.READ_PHONE_STATE;
 import static android.os.Build.VERSION_CODES.M;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+public class MainActivity extends AppCompatActivity  {
     Button sensBtn, permBtn;
-    TextView vActivity, vLocation, vNetwork;
+    TextView vActivity, vLocation, vNetwork, vSelectedBuslinie;
     SharedPreferences sharedPreferences, dataPref, locPref;
     Handler mHandler;
     String sLocation, sActivity;
@@ -79,47 +87,43 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     SharedPreferences.Editor editor = prefs.edit();
     GLocationListener gLocationListener;
     SensorTimeseries msensorTimeseries;
-    Spinner spinner ;
     double i= 0;
-    ParseQuery<ParseObject> query;
     boolean activitySensingon =false;
     private long backPressedTime =0;
     String buslinie, finalBuslinie;
-    String parseObjectID, oldParseObjectID;
+    String parseObjectID, oldParseObjectID, logDate;
     boolean sensingAlreadyStarted = false;
     Thread t;
+    HashMap busStopMap = new HashMap();
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        String selectedDienst = getIntent().getStringExtra("DIENST");
 
         this.checkPermissions();
         this.mHandler = new Handler();
         gLocationListener = new GLocationListener(Module.getContext(),5*1000,5*1000);
         msensorTimeseries = new SensorTimeseries();
-        query = ParseQuery.getQuery("testParse1");
-
-
-
-
+        buslinie = selectedDienst;
 
 
 
         vLocation = (TextView) findViewById(R.id.dataLocation);
         vNetwork = (TextView) findViewById(R.id.dataNetwork);
+        vSelectedBuslinie = (TextView) findViewById(R.id.selectedBusline);
         permBtn = (Button) findViewById(R.id.permBtn);
-        spinner = (Spinner) findViewById(R.id.buslineSpinner);
-        spinner.setOnItemSelectedListener(this);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,R.array.busline_array, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinner.setAdapter(adapter);
+
+        vSelectedBuslinie.setText(selectedDienst);
+
+
 
 
         dataPref = Application.getContext().getSharedPreferences("Data",Context.MODE_PRIVATE);
@@ -141,10 +145,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     // Start IntentService to register this application with GCM.
                     Log.d("Google Play Service", "ist aktiv");
 
-                   if(dataPref.getString("Network","asd") != null)
+                   if(dataPref.getString("Network","Keine Internetverbindung") != null)
                    {
                    vNetwork.setText(dataPref.getString("Network","asd"));
-                   Log.d("NetworkString", dataPref.getString("Network","asd"));
+                   Log.d("NetworkString", dataPref.getString("Network","Keine Internetverbindung"));
                    Log.d("LocationString", locPref.getString("Location","asd"));
                        if(activitySensingon){
                            m_Runnable.run();
@@ -160,19 +164,22 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 Log.d("tmpString","String: "+ buslinie);
                 finalBuslinie = buslinie;
 
+                ParseQuery<ParseObject> query;
+                query = ParseQuery.getQuery("BusGPS");
 
-                query.whereEqualTo("BusLabel", finalBuslinie);
+                query.whereEqualTo("buslinien", finalBuslinie);
                 query.whereEqualTo("isactive", false);
                 query.findInBackground(new FindCallback<ParseObject>() {
                     public void done(List<ParseObject> parselist, ParseException e) {
                         if(e==null && parselist.size() != 0){
                             Log.d("ParseList", "item 0: "+parselist.get(0));
+                            Log.d("ParseList", "komplette Liste: "+parselist);
                             parseObjectID = parselist.get(0).getObjectId();
                             Log.d("parsID",""+parseObjectID);
                         }
                         else if(e==null){
-                            final ParseObject newBusCoordinates = new ParseObject("testParse1");
-                            newBusCoordinates.put("BusLabel","UX1");
+                            final ParseObject newBusCoordinates = new ParseObject("BusGPS");
+                            newBusCoordinates.put("buslinien",finalBuslinie);
                             newBusCoordinates.put("isactive",false);
                             newBusCoordinates.saveInBackground(new SaveCallback() {
                                 @Override
@@ -199,24 +206,27 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             }
 
      });
+        // for logging purpose
 
+        busStopMap.put("8.025,50.912","Siegen Uni AR");
+        busStopMap.put("8.023,50.908","Weidenau Brucknerweg");
+        busStopMap.put("8.026,50.906","Weidenau Albrecht-Dürer-Straße");
+        busStopMap.put("8.027,50.905","Weidenau Hölderlinstraße");
+        busStopMap.put("8.027,50.895","Wedenau ZOB");
+        busStopMap.put("8.029,50.895","Weidenau ZOB - Bussteig 5");
+        busStopMap.put("8.018,50.876","Siegen ZOB - Bussteig A");
+        busStopMap.put("8.016,50.875","Siegen ZOB - Bussteig E");
+
+
+
+        //
 
 
 
     }
 
-    public void onItemSelected(AdapterView<?> parent, View view,
-                               int pos, long id) {
-        // An item was selected. You can retrieve the selected item using
-        // parent.getItemAtPosition(pos)
-        buslinie = parent.getItemAtPosition(pos).toString();
-       Log.d("spinnertest",parent.getItemAtPosition(pos).toString());
 
-    }
 
-    public void onNothingSelected(AdapterView<?> parent) {
-        // Another interface callback
-    }
 
 
     private final Runnable m_Runnable = new Runnable() {
@@ -235,7 +245,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             sensingAlreadyStarted = false;
 
-        Toast.makeText(this, "GPS übermittlung wurde gestoppt", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "GPS Übermittlung wurde gestoppt", Toast.LENGTH_SHORT).show();
+
+            ParseQuery<ParseObject> query;
+            query = ParseQuery.getQuery("BusGPS");
         query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
             @Override
             public void done(ParseObject object, ParseException e) {
@@ -246,6 +259,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         });
         oldParseObjectID = parseObjectID;
     }
+    else {
+            Toast.makeText(this, "APP wurde bereits gestoppt!", Toast.LENGTH_SHORT).show();
+        }
 
         //vLocation.setText(Application.getContext().);
     }
@@ -267,18 +283,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         }
     }
-/*
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onActivityEvent(ActivityEvent event){
-        sActivity = event.message;
-        Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
-    }
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEvent(MessageEvent event){
-        sLocation = event.message;
-        Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
-    }
-    */
+
 
 
     @Override
@@ -288,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onStop(){
         super.onStop();
+//        EventBus.getDefault().unregister(this);
     }
     private boolean checkPlayServices() {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
@@ -305,56 +311,103 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return true;
     }
 
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(SensorDataEvent event) throws JSONException {
 
-        //firePostJson(event.data.toJSON());
-        Double d1 = gLocationListener.getLatitude();
-        Double d2 = gLocationListener.getLongitude();
         final Double d1e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLat();
         final Double d2e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLng();
-        i += 0.005;
-        final ParseGeoPoint point = new ParseGeoPoint(d1e,d2e);
 
 
-        Log.d("ParseObjectID","kurz vor den put: "+parseObjectID);
+
+        Log.d("ParseObjectID","kurz vor dem put: "+parseObjectID);
         if(parseObjectID != oldParseObjectID) {
+
+            ParseQuery<ParseObject> query;
+            query = ParseQuery.getQuery("BusGPS");
             query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
                 public void done(ParseObject busCoordinates, ParseException e) {
                     if (e == null) {
-                        busCoordinates.put("BusLabel", finalBuslinie);
+                        busCoordinates.put("buslinien", finalBuslinie);
                         busCoordinates.put("Latitude", d1e);
                         busCoordinates.put("Longitude", d2e);
-                        busCoordinates.put("location", point);
                         busCoordinates.put("isactive", true);
                         busCoordinates.saveInBackground();
                     }
                 }
             });
         }
+        DecimalFormat df = new DecimalFormat("#.###");
+
+        String dCompare = df.format(d2e)+","+df.format(d1e);
+
+
+        long i = 0;
+        Iterator<Map.Entry> it = busStopMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry entry = it.next();
+
+            if ( entry.getKey().equals(dCompare) ) {
+                DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                Date date = new Date();
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                Date time = new Date();
+                System.out.println(timeFormat.format(time));
+
+                logDate = dateFormat.format(date) + "XX" + timeFormat.format(time)+"XX"+entry.getValue();
+
+
+                ParseQuery<ParseObject> query;
+                query = ParseQuery.getQuery("BusGPS");
+                query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
+                    public void done(ParseObject busCoordinates, ParseException e) {
+                        if (e == null) {
+                            busCoordinates.add("Log", logDate);
+                            busCoordinates.saveInBackground();
+                        }
+                    }
+                });
+            }
+        }
 
         String s = d1e+","+d2e;
         vLocation.setText(s);
         Log.d("Main: OBox event",s);
-    };
+    }
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+        if(!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+
     }
     @Override
-    public void onBackPressed() {        // to prevent irritating accidental logouts
-        long t = System.currentTimeMillis();
+    public void onPause(){
+        super.onPause();
 
-            if (t - backPressedTime > 2000) {    // 2 secs
-                backPressedTime = t;
-                Toast.makeText(this, "Press back again to close the app",
-                        Toast.LENGTH_SHORT).show();
-            } else {    // this guy is serious
-                // clean up#
-                permBtn.callOnClick();
-                finish();
-            }
+    }
+    @Override
+    public void onBackPressed() {
+
+        //stops the tracking
+        permBtn.callOnClick();
+        //Back to the ScrollingActivity
+        Intent intent = new Intent(getBaseContext(), ScrollingActivity.class);
+        startActivity(intent);
+        finish();
+        // to prevent irritating accidental logouts
+//        long t = System.currentTimeMillis();
+//
+//            if (t - backPressedTime > 2000) {    // 2 secs
+//                backPressedTime = t;
+//                Toast.makeText(this, "Press back again to close the app",
+//                        Toast.LENGTH_SHORT).show();
+//            } else {    // this guy is serious
+//                // clean up#
+//                permBtn.callOnClick();
+//                finish();
+//            }
         }
     }
 

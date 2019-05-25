@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.android.senstest">
-
     <!-- Required for Intel Sensing -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -12,8 +11,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.GET_TASKS" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <!-- Required for Intel Architecture -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" /> <!-- Required for Intel Architecture -->
     <uses-permission android:name="intel.aware.permission.ACCESS_AWARESERVICE" />
 
     <application
@@ -24,6 +22,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".ScrollingActivity"
+            android:label="@string/title_activity_scrolling"
+
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <meta-data
             android:name="com.parse.SERVER_URL"
@@ -36,26 +45,19 @@
             android:value="@string/parse_app_id" />
 
         <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+
             <meta-data
                 android:name="com.google.android.gms.version"
                 android:value="@integer/google_play_services_version" />
         </activity>
-        <activity android:name=".TestActivity"/>
+        <activity android:name=".TestActivity" />
+
         <receiver android:name="de.dennis.mobilesensing_module.mobilesensing.Sensors.OtherSensors.RunningApplicationService.RunningApplicationListener" />
-        <receiver android:name="de.dennis.mobilesensing_module.mobilesensing.Sensors.OtherSensors.ScreenOnService.ScreenOnListener"/>
+        <receiver android:name="de.dennis.mobilesensing_module.mobilesensing.Sensors.OtherSensors.ScreenOnService.ScreenOnListener" />
         <receiver android:name="de.dennis.mobilesensing_module.mobilesensing.Upload.DailyUpload.UploadListener" />
 
-
         <service android:name="com.intel.context.core.LocalService" />
-
-
-
-
     </application>
 
 </manifest>

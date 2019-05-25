@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -38,6 +39,7 @@ import de.dennis.mobilesensing_module.mobilesensing.Sensors.OtherSensors.Running
 
 import java.util.ArrayList;
 
+import static android.os.Build.VERSION_CODES.M;
 
 
 /**
@@ -120,9 +122,12 @@ public class SensingManager {
             permissionList.add(Manifest.permission.READ_CONTACTS);
             permissionList.add(Manifest.permission.READ_CALL_LOG);
         }
-        Intent intent = new Intent(Module.getContext(), PermissionActivity.class);
-        intent.putStringArrayListExtra("PermissionList",permissionList);
-        Module.getContext().startActivity(intent);
+        // if android version 6.0 or higher needs to get different permission handling
+        if (Build.VERSION.SDK_INT > M) {
+            Intent intent = new Intent(Module.getContext(), PermissionActivity.class);
+            intent.putStringArrayListExtra("PermissionList", permissionList);
+            Module.getContext().startActivity(intent);
+        }
     }
     public void startSensing()
     {

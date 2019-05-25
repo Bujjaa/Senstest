@@ -25,14 +25,7 @@ public class Application extends android.app.Application {
        sensMang = Module.getSensingManager();
 
         Parse.initialize(this);
-        /*
-        Parse.initialize(new Parse.Configuration.Builder(this)
-                        .applicationId("1234567890")
-                        .server("http://transport.wineme.fb5.uni-siegen.de/parse/")
-                        .build()
-        );
 
-*/
 
         sensMang.setSensingSetting(SensorNames.Activity,false);
         sensMang.setSensingSetting(SensorNames.GPS,false);

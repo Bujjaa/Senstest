@@ -86,6 +86,9 @@ public class GLocationListener implements GoogleApiClient.ConnectionCallbacks, G
             return  ;
         }
         location = LocationServices.FusedLocationApi.getLastLocation(mGAC);
+//        if(Build.VERSION.SDK_INT < 23){
+//            location = LocationServices.FusedLocationApi.getLastLocation(mGAC);
+//        }
 
     }
     protected void createLocationRequest(long interval, long fastestInterval) {
@@ -139,6 +142,12 @@ public class GLocationListener implements GoogleApiClient.ConnectionCallbacks, G
         mFusedLocationClient.requestLocationUpdates(mLocationRequest,
                 mLocationCallback,
                 null /* Looper */);
+
+//        if(Build.VERSION.SDK_INT < 23){
+//            mFusedLocationClient.requestLocationUpdates(mLocationRequest,
+//                    mLocationCallback,
+//                    null /* Looper */);
+//        }
     }
 
     public double getLatitude(){

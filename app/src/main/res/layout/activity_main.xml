@@ -13,8 +13,20 @@
         android:layout_alignParentTop="true"
         android:layout_alignStart="@+id/locationView"
         android:layout_marginTop="69dp"
-        android:text="Buslinie"
+        android:text="Ausgewählte Buslinie:"
         tools:layout_editor_absoluteX="41dp"
+        tools:layout_editor_absoluteY="49dp" />
+
+    <TextView
+        android:id="@+id/selectedBusline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/locationView"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="192dp"
+        android:layout_marginTop="69dp"
+        android:text=" Buslinie"
+        tools:layout_editor_absoluteX="60p"
         tools:layout_editor_absoluteY="49dp" />
 
     <TextView
@@ -44,9 +56,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/dataNetwork"
-        android:layout_alignStart="@+id/buslineSpinner"
-        android:layout_marginBottom="62dp"
-        android:text="test"
+        android:layout_marginBottom="64dp"
+        android:layout_marginStart="181dp"
+        android:text="GPS tracking nicht gestartet"
         tools:layout_editor_absoluteX="205dp"
         tools:layout_editor_absoluteY="102dp" />
 
@@ -55,9 +67,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@+id/networkView"
-        android:layout_alignBottom="@+id/networkView"
         android:layout_alignStart="@+id/dataLocation"
-        android:text="test"
+        android:layout_alignBottom="@+id/networkView"
+        android:layout_marginStart="-5dp"
+        android:layout_marginBottom="0dp"
+        android:text="Programm noch nicht gestartet"
         tools:layout_editor_absoluteX="205dp"
         tools:layout_editor_absoluteY="171dp" />
 
@@ -83,14 +97,6 @@
         android:layout_toEndOf="@+id/sensBtn"
         android:onClick="stopSensing"
         android:text="Logout" />
-
-    <Spinner
-        android:id="@+id/buslineSpinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/buslineView"
-        android:layout_marginStart="72dp"
-        android:layout_toEndOf="@+id/networkView" />
 
 
 </RelativeLayout>

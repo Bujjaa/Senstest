@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity  {
     double i= 0;
     boolean activitySensingon =false;
     private long backPressedTime =0;
-    String buslinie, finalBuslinie;
+    String buslinie, finalBuslinie, tmpLogDate;
     String parseObjectID, oldParseObjectID, logDate;
     boolean sensingAlreadyStarted = false;
     Thread t;
@@ -209,13 +209,13 @@ public class MainActivity extends AppCompatActivity  {
         // for logging purpose
 
         busStopMap.put("8.025,50.912","Siegen Uni AR");
-        busStopMap.put("8.023,50.908","Weidenau Brucknerweg");
-        busStopMap.put("8.026,50.906","Weidenau Albrecht-Dürer-Straße");
+        busStopMap.put("8.024,50.901","Weidenau Brueckenstraße");
+        busStopMap.put("8.03,50.905","Weidenau Wilhelm-von-Humboldt-Platz");
         busStopMap.put("8.027,50.905","Weidenau Hölderlinstraße");
         busStopMap.put("8.027,50.895","Wedenau ZOB");
         busStopMap.put("8.029,50.895","Weidenau ZOB - Bussteig 5");
         busStopMap.put("8.018,50.876","Siegen ZOB - Bussteig A");
-        busStopMap.put("8.016,50.875","Siegen ZOB - Bussteig E");
+        busStopMap.put("8.017,50.875","Siegen ZOB - Bussteig B");
 
 
 
@@ -347,7 +347,10 @@ public class MainActivity extends AppCompatActivity  {
         while (it.hasNext()) {
             Map.Entry entry = it.next();
 
-            if ( entry.getKey().equals(dCompare) ) {
+            String[] parts  = ((String) entry.getKey()).split(",");
+            Double compareDlong= Double.parseDouble(parts[0]) - d2e;
+            Double compareDlat = Double.parseDouble(parts[1]) - d1e;
+            if ( compareDlat <0.0007 && compareDlat >-0.0007 && compareDlong <0.0007 && compareDlong >-0.0007) {
                 DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
                 Date date = new Date();
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
@@ -361,9 +364,10 @@ public class MainActivity extends AppCompatActivity  {
                 query = ParseQuery.getQuery("BusGPS");
                 query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
                     public void done(ParseObject busCoordinates, ParseException e) {
-                        if (e == null) {
+                        if (e == null&& !logDate.equals(tmpLogDate)) {
                             busCoordinates.add("Log", logDate);
                             busCoordinates.saveInBackground();
+                            tmpLogDate = logDate;
                         }
                     }
                 });

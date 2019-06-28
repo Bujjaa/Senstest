@@ -3,9 +3,11 @@ package com.example.android.senstest;
 import android.Manifest;
 import android.content.Intent;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -22,6 +24,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -80,6 +83,7 @@ import static android.os.Build.VERSION_CODES.M;
 public class MainActivity extends AppCompatActivity  {
     Button sensBtn, permBtn;
     TextView vActivity, vLocation, vNetwork, vSelectedBuslinie;
+    ImageView vVerbindungsaufbau,vGestartet, vGestoppt;
     SharedPreferences sharedPreferences, dataPref, locPref;
     Handler mHandler;
     String sLocation, sActivity;
@@ -88,6 +92,7 @@ public class MainActivity extends AppCompatActivity  {
     GLocationListener gLocationListener;
     SensorTimeseries msensorTimeseries;
     double i= 0;
+    int vGestartetFirstInitiate = 0;
     boolean activitySensingon =false;
     private long backPressedTime =0;
     String buslinie, finalBuslinie, tmpLogDate;
@@ -97,6 +102,9 @@ public class MainActivity extends AppCompatActivity  {
     HashMap busStopMap = new HashMap();
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+    Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
+    int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
 
 
 
@@ -107,6 +115,7 @@ public class MainActivity extends AppCompatActivity  {
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         String selectedDienst = getIntent().getStringExtra("DIENST");
+
 
         this.checkPermissions();
         this.mHandler = new Handler();
@@ -120,6 +129,11 @@ public class MainActivity extends AppCompatActivity  {
         vNetwork = (TextView) findViewById(R.id.dataNetwork);
         vSelectedBuslinie = (TextView) findViewById(R.id.selectedBusline);
         permBtn = (Button) findViewById(R.id.permBtn);
+
+        //loading images
+        vVerbindungsaufbau = (ImageView) findViewById(R.id.imageVerbindungsaufbau);
+        vGestartet = (ImageView) findViewById(R.id.imageGestartet);
+        vGestoppt = (ImageView) findViewById(R.id.imageGestoppt);
 
         vSelectedBuslinie.setText(selectedDienst);
 
@@ -135,11 +149,17 @@ public class MainActivity extends AppCompatActivity  {
         sensBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                if(level <=10){
+                    Toast.makeText(MainActivity.this, "Akku zu schwach bitte erst laden!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 if(sensingAlreadyStarted == true){
                     Toast.makeText(MainActivity.this, "Programm bereits gestartet, bitte erst stoppen!", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
+                vVerbindungsaufbau.setVisibility(View.VISIBLE);
 
                 if (checkPlayServices()) {
                     // Start IntentService to register this application with GCM.
@@ -244,7 +264,7 @@ public class MainActivity extends AppCompatActivity  {
             Module.getSensingManager().stopSensing();
 
             sensingAlreadyStarted = false;
-
+        vGestoppt.setVisibility(View.VISIBLE);
         Toast.makeText(this, "GPS Übermittlung wurde gestoppt", Toast.LENGTH_SHORT).show();
 
             ParseQuery<ParseObject> query;
@@ -258,6 +278,7 @@ public class MainActivity extends AppCompatActivity  {
             }
         });
         oldParseObjectID = parseObjectID;
+        finish();
     }
     else {
             Toast.makeText(this, "APP wurde bereits gestoppt!", Toast.LENGTH_SHORT).show();
@@ -314,6 +335,21 @@ public class MainActivity extends AppCompatActivity  {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(SensorDataEvent event) throws JSONException {
+        if(vGestartetFirstInitiate == 0){
+            vGestartet.setVisibility(View.VISIBLE);
+            vVerbindungsaufbau.setVisibility(View.GONE);
+            vGestartetFirstInitiate=1;
+        }
+
+        if(level <= 5){
+
+            try {
+                stopSensing(null);
+            } catch (ContextProviderException e) {
+                e.printStackTrace();
+            }
+        }
+
 
         final Double d1e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLat();
         final Double d2e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLng();

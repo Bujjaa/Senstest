@@ -69,6 +69,7 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -100,6 +101,7 @@ public class MainActivity extends AppCompatActivity  {
     boolean sensingAlreadyStarted = false;
     Thread t;
     HashMap busStopMap = new HashMap();
+    ArrayList<String> sameCoordinates = new ArrayList<>();
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
@@ -258,6 +260,29 @@ public class MainActivity extends AppCompatActivity  {
         }
     };
 
+    public void reconnect()throws ContextProviderException{
+
+            Module.getSensingManager().stopSensing();
+
+            sensingAlreadyStarted = false;
+            vGestoppt.setVisibility(View.VISIBLE);
+            Toast.makeText(this, "GPS Übermittlung wurde gestoppt", Toast.LENGTH_SHORT).show();
+
+            ParseQuery<ParseObject> query;
+            query = ParseQuery.getQuery("BusGPS");
+            query.getInBackground(parseObjectID, new GetCallback<ParseObject>() {
+                @Override
+                public void done(ParseObject object, ParseException e) {
+                    object.put("isactive", false);
+                    object.saveInBackground();
+                    Log.d("Stopsensing", "stopped Object: " + parseObjectID);
+                }
+            });
+            oldParseObjectID = parseObjectID;
+        vGestartetFirstInitiate = 0;
+        vGestoppt.setVisibility(View.GONE);
+            sensBtn.callOnClick();
+    }
 
     public void stopSensing(View v) throws ContextProviderException {
         if (sensingAlreadyStarted == true) {
@@ -338,6 +363,7 @@ public class MainActivity extends AppCompatActivity  {
         if(vGestartetFirstInitiate == 0){
             vGestartet.setVisibility(View.VISIBLE);
             vVerbindungsaufbau.setVisibility(View.GONE);
+            vGestoppt.setVisibility(View.GONE);
             vGestartetFirstInitiate=1;
         }
 
@@ -349,11 +375,37 @@ public class MainActivity extends AppCompatActivity  {
                 e.printStackTrace();
             }
         }
+        if(sameCoordinates.size()>=10)
+        {
+            int tmpcounter = 0;
+            for(int x = 0; x<sameCoordinates.size();x++){
+
+                if(sameCoordinates.get(0)==sameCoordinates.get(x)){
+                    tmpcounter++;
+
+                }
+                else{
+                    break;
+                }
+            }
+            if (tmpcounter >=8){
+                try {
+                    reconnect();
+                    Log.d("RECONNECT","Reconnect wurde ausgeführt");
+                } catch (ContextProviderException e) {
+                    e.printStackTrace();
+                }
+                sameCoordinates.clear();
+            }
+            else{
+                sameCoordinates.clear();
+            }
+        }
 
 
         final Double d1e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLat();
         final Double d2e = event.data.getValues().get(0).getGeoPointEntities().get(0).getLng();
-
+        sameCoordinates.add(d1e.toString());
 
 
         Log.d("ParseObjectID","kurz vor dem put: "+parseObjectID);

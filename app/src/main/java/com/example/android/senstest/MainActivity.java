@@ -152,8 +152,9 @@ public class MainActivity extends AppCompatActivity  {
             public void onClick(View v) {
                 Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
                 int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                if(level <=10){
+                if(level <=1){
                     Toast.makeText(MainActivity.this, "Akku zu schwach bitte erst laden!", Toast.LENGTH_SHORT).show();
+                    finish();
                     return;
                 }
 
@@ -369,7 +370,7 @@ public class MainActivity extends AppCompatActivity  {
         Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
         int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
         Log.d("Batterylevel","level: "+ level);
-        if(level <= 5){
+        if(level <= 1){
 
             try {
                 stopSensing(null);

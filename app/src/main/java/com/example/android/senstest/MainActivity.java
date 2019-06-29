@@ -105,8 +105,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-    Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
-    int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+
 
 
 
@@ -151,7 +150,8 @@ public class MainActivity extends AppCompatActivity  {
         sensBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
+                int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 if(level <=10){
                     Toast.makeText(MainActivity.this, "Akku zu schwach bitte erst laden!", Toast.LENGTH_SHORT).show();
                     return;
@@ -366,7 +366,9 @@ public class MainActivity extends AppCompatActivity  {
             vGestoppt.setVisibility(View.GONE);
             vGestartetFirstInitiate=1;
         }
-
+        Intent batteryStatus = Application.getContext().registerReceiver(null, ifilter);
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        Log.d("Batterylevel","level: "+ level);
         if(level <= 5){
 
             try {
@@ -379,19 +381,24 @@ public class MainActivity extends AppCompatActivity  {
         {
             int tmpcounter = 0;
             for(int x = 0; x<sameCoordinates.size();x++){
-
-                if(sameCoordinates.get(0)==sameCoordinates.get(x)){
+                Log.d("sameCoordinates",""+sameCoordinates.get(0)+" : "+sameCoordinates.get(x));
+                if(sameCoordinates.get(0).equals(sameCoordinates.get(x))){
                     tmpcounter++;
-
+                    Log.d("Listarray","Listarray"+ sameCoordinates.get(x));
                 }
                 else{
                     break;
                 }
+                Log.d("tmpcounter","tmpcounter: "+ tmpcounter);
+
+
+
             }
             if (tmpcounter >=8){
                 try {
-                    reconnect();
                     Log.d("RECONNECT","Reconnect wurde ausgeführt");
+
+                    reconnect();
                 } catch (ContextProviderException e) {
                     e.printStackTrace();
                 }
